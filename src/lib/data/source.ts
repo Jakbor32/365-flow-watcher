@@ -10,7 +10,7 @@ export interface GrantResult {
 
 /**
  * Everything the app reads or writes goes through this interface.
- * `DemoDataSource` serves seeded fake data; the live source (module 5)
+ * `DemoDataSource` serves seeded fake data; `LiveDataSource` (lib/live)
  * calls the Power Automate Flow Service and Microsoft Graph.
  */
 export interface DataSource {

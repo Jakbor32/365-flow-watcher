@@ -150,7 +150,12 @@ beforeEach(() => {
       const user = Object.values(users).find(
         (candidate) => (candidate as { mail: string }).mail === key,
       );
-      return user ? respond(user) : respond({ error: { code: "Request_ResourceNotFound" } }, 404);
+      if (!user) return respond({ error: { code: "Request_ResourceNotFound" } }, 404);
+      const wantsStatus = url.searchParams.get("$select")?.includes("accountEnabled");
+      if (wantsStatus && accountEnabledForbidden)
+        return respond({ error: { code: "Authorization_RequestDenied" } }, 403);
+      const { accountEnabled, ...basic } = user as Record<string, unknown>;
+      return respond(wantsStatus ? { ...basic, accountEnabled } : basic);
     }
     return respond({ error: { code: "Unexpected", message: path } }, 500);
   });
@@ -259,5 +264,18 @@ describe("LiveDataSource", () => {
     await source().listFlows();
     expect(calls[0].url).toContain(`/scopes/admin/environments/${ENV}/v2/flows`);
     expect(calls[0].url).toContain("api-version=2016-11-01");
+  });
+});
+
+describe("Graph lookups for grant", () => {
+  it("refuses to treat a disabled account as grantable", async () => {
+    const person = await source().findPerson("bob@contoso.com");
+    expect(person?.status).toBe("disabled");
+  });
+
+  it("falls back without User.Read.All", async () => {
+    accountEnabledForbidden = true;
+    const person = await source().findPerson("bob@contoso.com");
+    expect(person?.displayName).toBe("Bob");
   });
 });

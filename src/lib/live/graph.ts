@@ -125,12 +125,13 @@ async function batchUsers(token: string, ids: string[], select: string) {
 }
 
 export async function findPersonByEmail(token: string, email: string): Promise<Person | null> {
+  const lookup = (select: string) =>
+    requestJson(`${GRAPH_API}/users/${encodeURIComponent(email)}?$select=${select}`, token, {
+      service: "Microsoft Graph",
+    });
   try {
-    return toPerson(
-      await requestJson(`${GRAPH_API}/users/${encodeURIComponent(email)}?$select=${BASIC}`, token, {
-        service: "Microsoft Graph",
-      }),
-    );
+    // With status first, so a disabled account is never treated as active.
+    return toPerson(await withStatusFallback(lookup));
   } catch (error) {
     if (error instanceof UpstreamError && error.status === 404) return null;
     throw error;
@@ -141,15 +142,27 @@ export async function searchPeople(token: string, query: string, limit: number):
   // $search terms are quoted; strip anything that could break out of the quotes.
   const term = query.replace(/["\\]/g, "").trim();
   if (term.length < 2) return [];
-  const url = new URL(`${GRAPH_API}/users`);
-  url.searchParams.set("$search", `"displayName:${term}" OR "mail:${term}"`);
-  url.searchParams.set("$select", BASIC);
-  url.searchParams.set("$top", String(limit));
-  const payload = await requestJson(url.toString(), token, {
-    service: "Microsoft Graph",
-    headers: { ConsistencyLevel: "eventual" },
-  });
-  return arrayOf(payload)
+  const search = (select: string) => {
+    const url = new URL(`${GRAPH_API}/users`);
+    url.searchParams.set("$search", `"displayName:${term}" OR "mail:${term}"`);
+    url.searchParams.set("$select", select);
+    url.searchParams.set("$top", String(limit));
+    return requestJson(url.toString(), token, {
+      service: "Microsoft Graph",
+      headers: { ConsistencyLevel: "eventual" },
+    });
+  };
+  return arrayOf(await withStatusFallback(search))
     .map((raw) => toPerson(raw))
-    .filter((person): person is Person => person !== null);
+    .filter((person): person is Person => person !== null && person.status === "active");
+}
+
+/** Tries with accountEnabled; without User.Read.All Graph says 403, so retry without. */
+async function withStatusFallback(request: (select: string) => Promise<unknown>): Promise<unknown> {
+  try {
+    return await request(WITH_STATUS);
+  } catch (error) {
+    if (error instanceof UpstreamError && error.status === 403) return request(BASIC);
+    throw error;
+  }
 }
