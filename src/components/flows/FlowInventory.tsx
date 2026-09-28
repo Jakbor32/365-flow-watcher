@@ -162,7 +162,11 @@ export function FlowInventory() {
             Every cloud flow in the environment, worst first.
           </p>
         </div>
-        {(canPreview || previewAs) && <ViewAs previewing={previewAs} onChange={setPreview} />}
+        {/* Client-only: an email in server HTML gets rewritten by proxies like
+            Cloudflare's email obfuscation, which breaks hydration. */}
+        {load.status === "ready" && (canPreview || previewAs) && (
+          <ViewAs previewing={previewAs} onChange={setPreview} />
+        )}
       </div>
 
       {load.status === "ready" ? (
