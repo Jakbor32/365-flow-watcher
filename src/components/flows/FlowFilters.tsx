@@ -17,7 +17,7 @@ export function FlowFilters({ query, owners, connectors, onChange, layout }: Pro
     <label
       className={layout === "stacked" ? "flex flex-col gap-1.5" : "flex min-w-0 items-center gap-2"}
     >
-      <span className="text-muted font-mono text-[11px] tracking-wide whitespace-nowrap uppercase">
+      <span className="font-mono text-[11px] tracking-wide whitespace-nowrap text-muted uppercase">
         {label}
       </span>
       {control}
@@ -89,9 +89,9 @@ export function FlowFilters({ query, owners, connectors, onChange, layout }: Pro
           type="checkbox"
           checked={query.orphanedOnly}
           onChange={(event) => onChange({ orphanedOnly: event.target.checked })}
-          className="accent-accent size-4"
+          className="size-4 accent-accent"
         />
-        <span className="text-ink-2 text-sm">Orphaned only</span>
+        <span className="text-sm text-ink-2">Orphaned only</span>
       </label>
     </div>
   );

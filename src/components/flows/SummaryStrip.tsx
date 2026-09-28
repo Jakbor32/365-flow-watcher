@@ -40,30 +40,30 @@ export function SummaryStrip({ summary, query, onApply }: Props) {
   ];
 
   return (
-    <div className="border-rule grid grid-cols-2 border-y sm:grid-cols-5">
+    <div className="grid grid-cols-2 border-y border-rule sm:grid-cols-5">
       {items.map((item) => (
         <button
           key={item.label}
           type="button"
           aria-pressed={item.active}
           onClick={() => onApply(item.apply)}
-          className="border-rule hover:bg-paper-2 aria-pressed:bg-paper-3 flex flex-col items-start gap-0.5 px-4 py-3 text-left transition-colors duration-150 odd:border-r sm:border-r sm:px-6"
+          className="flex flex-col items-start gap-0.5 border-rule px-4 py-3 text-left transition-colors duration-150 odd:border-r hover:bg-paper-2 aria-pressed:bg-paper-3 sm:border-r sm:px-6"
         >
-          <span className="text-muted font-mono text-[11px] tracking-wide whitespace-nowrap uppercase">
+          <span className="font-mono text-[11px] tracking-wide whitespace-nowrap text-muted uppercase">
             {item.label}
           </span>
-          <span className={`tabular text-ink font-mono text-2xl ${item.tone ?? ""}`}>
+          <span className={`tabular font-mono text-2xl text-ink ${item.tone ?? ""}`}>
             {item.value}
           </span>
         </button>
       ))}
-      <div className="border-rule col-span-2 flex flex-col gap-0.5 border-t px-4 py-3 sm:col-span-1 sm:border-t-0 sm:px-6">
-        <span className="text-muted font-mono text-[11px] tracking-wide whitespace-nowrap uppercase">
+      <div className="col-span-2 flex flex-col gap-0.5 border-t border-rule px-4 py-3 sm:col-span-1 sm:border-t-0 sm:px-6">
+        <span className="font-mono text-[11px] tracking-wide whitespace-nowrap text-muted uppercase">
           Run success · 7d
         </span>
-        <span className="tabular text-ink font-mono text-2xl">
+        <span className="tabular font-mono text-2xl text-ink">
           {percent(success, summary.runs)}
-          <span className="text-muted ml-2 text-xs">
+          <span className="ml-2 text-xs text-muted">
             {summary.failures} of {summary.runs} failed
           </span>
         </span>

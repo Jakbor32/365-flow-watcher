@@ -1,5 +1,8 @@
 import type { FlowState, FlowWithHealth } from "@/lib/domain/types";
 
+/** sessionStorage key for the last inventory view. */
+export const INVENTORY_QUERY_KEY = "inventory-query";
+
 export type HealthFilter = "all" | "failing" | "healthy" | "idle";
 export type SortKey = "name" | "failures" | "lastRun" | "owner";
 

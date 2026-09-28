@@ -29,7 +29,7 @@ export function ThemeToggle() {
       }}
       aria-label={`Switch to ${next} theme`}
       title={`Switch to ${next} theme`}
-      className="border-rule text-muted hover:border-rule-2 hover:text-ink active:bg-paper-3 grid size-8 place-items-center rounded-md border transition-colors duration-150"
+      className="grid size-8 place-items-center rounded-md border border-rule text-muted transition-colors duration-150 hover:border-rule-2 hover:text-ink active:bg-paper-3"
     >
       {theme === "dark" ? (
         <svg

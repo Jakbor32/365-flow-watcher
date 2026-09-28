@@ -92,14 +92,6 @@ describe("DemoDataSource", () => {
     expect(await source.listPermissions(flow.id)).toEqual(before);
   });
 
-  it("refuses to grant access to a disabled account", async () => {
-    const [flow] = await source.listFlows();
-    const disabled = generateDemoTenant({ now }).people.find(
-      (person) => person.status === "disabled",
-    )!;
-    await expect(source.grantAccess(flow.id, disabled.email)).rejects.toThrow(/No active user/);
-  });
-
   it("rejects unknown flows", async () => {
     await expect(source.listRuns("missing", 10)).rejects.toThrow(/not found/);
   });

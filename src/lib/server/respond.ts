@@ -1,13 +1,22 @@
 import "server-only";
 import { ConfigError } from "@/lib/config";
-import { NotFoundError } from "@/lib/data/source";
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/lib/data/source";
 import { NotImplementedError } from "./data-source";
 
 /** Maps known errors to JSON responses; anything else is logged and hidden. */
-export async function respond<T>(work: () => Promise<T>): Promise<Response> {
+export async function respond<T>(work: () => Promise<T>, status = 200): Promise<Response> {
   try {
-    return Response.json(await work(), { headers: { "Cache-Control": "no-store" } });
+    return Response.json(await work(), { status, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    if (error instanceof BadRequestError) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof ForbiddenError) {
+      return Response.json({ error: error.message }, { status: 403 });
+    }
+    if (error instanceof ConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     if (error instanceof NotFoundError) {
       return Response.json({ error: error.message }, { status: 404 });
     }

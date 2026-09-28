@@ -21,6 +21,11 @@ export interface DataSource {
   grantAccess(flowId: string, email: string): Promise<GrantResult>;
   revokeAccess(flowId: string, permissionId: string): Promise<{ simulated: boolean }>;
   findPerson(email: string): Promise<Person | null>;
+  /** Active users whose name or email contains `query`, for the grant picker. */
+  searchPeople(query: string, limit: number): Promise<Person[]>;
 }
 
 export class NotFoundError extends Error {}
+export class BadRequestError extends Error {}
+export class ConflictError extends Error {}
+export class ForbiddenError extends Error {}

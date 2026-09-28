@@ -39,27 +39,29 @@ export class DemoDataSource implements DataSource {
     return this.tenant.people.find((person) => person.email === needle) ?? null;
   }
 
+  async searchPeople(query: string, limit: number) {
+    const needle = query.trim().toLowerCase();
+    return this.tenant.people
+      .filter(
+        (person) =>
+          person.status === "active" &&
+          (person.displayName.toLowerCase().includes(needle) || person.email.includes(needle)),
+      )
+      .slice(0, limit);
+  }
+
+  // Business rules (active user, no duplicates, owner stays) live in
+  // lib/access/rules.ts and run before these calls, for every source.
   async grantAccess(flowId: string, email: string): Promise<GrantResult> {
     this.requireFlow(flowId);
     const person = await this.findPerson(email);
-
-    if (!person || person.status !== "active") {
-      throw new NotFoundError(`No active user ${email} in the demo tenant`);
-    }
-
+    if (!person) throw new NotFoundError(`No user ${email} in the demo tenant`);
     const permission: Permission = { id: person.id, role: "CanEdit", principal: person };
     return { permission, simulated: true };
   }
 
-  async revokeAccess(flowId: string, permissionId: string) {
-    const exists = this.permissions(this.requireFlow(flowId)).some(
-      (permission) => permission.id === permissionId,
-    );
-
-    if (!exists) {
-      throw new NotFoundError(`Permission ${permissionId} not found on flow ${flowId}`);
-    }
-
+  async revokeAccess(flowId: string) {
+    this.requireFlow(flowId);
     return { simulated: true };
   }
 

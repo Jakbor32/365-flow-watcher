@@ -6,7 +6,7 @@ export function OwnerCell({ flow }: { flow: FlowWithHealth }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
       <span
-        className={`truncate ${flow.owner.status === "active" ? "text-ink-2" : "text-muted decoration-rule-2 line-through"}`}
+        className={`truncate ${flow.owner.status === "active" ? "text-ink-2" : "text-muted line-through decoration-rule-2"}`}
       >
         {flow.owner.displayName}
       </span>
@@ -21,7 +21,7 @@ export function OwnerCell({ flow }: { flow: FlowWithHealth }) {
 }
 
 export function LastRunCell({ flow, now }: { flow: FlowWithHealth; now: number }) {
-  if (!flow.lastRun) return <span className="text-muted font-mono text-xs">never</span>;
+  if (!flow.lastRun) return <span className="font-mono text-xs text-muted">never</span>;
   return (
     <span
       className="inline-flex items-center gap-2 font-mono text-xs whitespace-nowrap"
@@ -35,7 +35,7 @@ export function LastRunCell({ flow, now }: { flow: FlowWithHealth; now: number }
 }
 
 export function FailuresCell({ flow }: { flow: FlowWithHealth }) {
-  if (flow.recentRuns === 0) return <span className="text-muted font-mono text-xs">no runs</span>;
+  if (flow.recentRuns === 0) return <span className="font-mono text-xs text-muted">no runs</span>;
   return (
     <span className="tabular font-mono text-xs whitespace-nowrap">
       <span className={flow.recentFailures > 0 ? "text-fail" : "text-muted"}>
@@ -43,7 +43,7 @@ export function FailuresCell({ flow }: { flow: FlowWithHealth }) {
       </span>
       <span className="text-muted"> / {flow.recentRuns}</span>
       {flow.recentFailures > 0 && (
-        <span className="text-muted ml-1.5">{percent(flow.recentFailures, flow.recentRuns)}</span>
+        <span className="ml-1.5 text-muted">{percent(flow.recentFailures, flow.recentRuns)}</span>
       )}
     </span>
   );

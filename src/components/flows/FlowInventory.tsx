@@ -15,6 +15,7 @@ import {
   type FlowQuery,
   type SortKey,
 } from "@/lib/flows/filter";
+import { INVENTORY_QUERY_KEY } from "@/lib/flows/filter";
 import { FlowCards } from "./FlowCards";
 import { FlowFilters } from "./FlowFilters";
 import { FlowTable } from "./FlowTable";
@@ -49,6 +50,15 @@ export function FlowInventory() {
       });
     return () => controller.abort();
   }, [attempt]);
+
+  // Remember the view so "← Flows" on a detail page returns to it.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(INVENTORY_QUERY_KEY, serializeQuery(query).toString());
+    } catch {
+      // Storage blocked: the back link falls back to the unfiltered list.
+    }
+  }, [query]);
 
   // "/" jumps to search, like most admin consoles.
   useEffect(() => {
@@ -94,14 +104,14 @@ export function FlowInventory() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16">
         <h1 className="text-lg font-medium">Could not load flows</h1>
-        <p className="text-fail mt-2 font-mono text-xs">{load.message}</p>
+        <p className="mt-2 font-mono text-xs text-fail">{load.message}</p>
         <button
           type="button"
           onClick={() => {
             setLoad({ status: "loading" });
             setAttempt((value) => value + 1);
           }}
-          className="border-rule-2 text-ink hover:bg-paper-3 mt-6 h-8 rounded-md border px-3"
+          className="mt-6 h-8 rounded-md border border-rule-2 px-3 text-ink hover:bg-paper-3"
         >
           Try again
         </button>
@@ -124,7 +134,7 @@ export function FlowInventory() {
       <div className="flex flex-wrap items-end justify-between gap-3 px-4 pt-6 pb-4 sm:px-6">
         <div>
           <h1 className="text-xl font-medium">Flows</h1>
-          <p className="text-muted mt-0.5 text-xs">
+          <p className="mt-0.5 text-xs text-muted">
             Every cloud flow in the environment, worst first.
           </p>
         </div>
@@ -133,7 +143,7 @@ export function FlowInventory() {
       {load.status === "ready" ? (
         <SummaryStrip summary={summary} query={query} onApply={update} />
       ) : (
-        <div aria-hidden className="border-rule bg-paper-2 h-[74px] border-y" />
+        <div aria-hidden className="h-[74px] border-y border-rule bg-paper-2" />
       )}
 
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
@@ -145,9 +155,9 @@ export function FlowInventory() {
             value={query.search}
             onChange={(event) => update({ search: event.target.value })}
             placeholder="Search name, owner or flow ID"
-            className="border-rule bg-paper-2 text-ink placeholder:text-muted hover:border-rule-2 h-8 w-full rounded-md border pr-8 pl-3 text-sm"
+            className="h-8 w-full rounded-md border border-rule bg-paper-2 pr-8 pl-3 text-sm text-ink placeholder:text-muted hover:border-rule-2"
           />
-          <kbd className="border-rule text-muted pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 rounded border px-1.5 font-mono text-[10px] sm:block">
+          <kbd className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 rounded border border-rule px-1.5 font-mono text-[10px] text-muted sm:block">
             /
           </kbd>
         </label>
@@ -155,17 +165,17 @@ export function FlowInventory() {
         <button
           type="button"
           onClick={() => drawer.current?.showModal()}
-          className="border-rule text-ink-2 hover:border-rule-2 h-8 rounded-md border px-3 whitespace-nowrap lg:hidden"
+          className="h-8 rounded-md border border-rule px-3 whitespace-nowrap text-ink-2 hover:border-rule-2 lg:hidden"
         >
           Filters
-          {filterCount > 0 && <span className="text-accent ml-1.5 font-mono">{filterCount}</span>}
+          {filterCount > 0 && <span className="ml-1.5 font-mono text-accent">{filterCount}</span>}
         </button>
 
         <div className="hidden lg:block">{filters("inline")}</div>
 
         <div className="ml-auto flex items-center gap-3">
           <span
-            className="tabular text-muted font-mono text-xs whitespace-nowrap"
+            className="tabular font-mono text-xs whitespace-nowrap text-muted"
             aria-live="polite"
           >
             {visible.length} of {flows.length}
@@ -174,7 +184,7 @@ export function FlowInventory() {
             type="button"
             onClick={exportCsv}
             disabled={visible.length === 0}
-            className="border-rule text-ink-2 hover:border-rule-2 hover:text-ink h-8 rounded-md border px-3 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-8 rounded-md border border-rule px-3 whitespace-nowrap text-ink-2 hover:border-rule-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
             Export CSV
           </button>
@@ -182,26 +192,26 @@ export function FlowInventory() {
       </div>
 
       {load.status === "loading" ? (
-        <p className="text-muted px-4 py-12 font-mono text-xs sm:px-6">Loading flows…</p>
+        <p className="px-4 py-12 font-mono text-xs text-muted sm:px-6">Loading flows…</p>
       ) : visible.length === 0 ? (
-        <div className="border-rule border-t px-4 py-12 sm:px-6">
+        <div className="border-t border-rule px-4 py-12 sm:px-6">
           <p className="text-ink">No flows match these filters.</p>
           <button
             type="button"
             onClick={() =>
               update({ ...DEFAULT_QUERY, sort: query.sort, descending: query.descending })
             }
-            className="text-accent mt-3 underline-offset-4 hover:underline"
+            className="mt-3 text-accent underline-offset-4 hover:underline"
           >
             Clear filters and search
           </button>
         </div>
       ) : (
         <>
-          <div className="border-rule hidden border-t md:block">
+          <div className="hidden border-t border-rule md:block">
             <FlowTable flows={visible} query={query} now={load.generatedAt} onSort={sortBy} />
           </div>
-          <div className="border-rule border-t md:hidden">
+          <div className="border-t border-rule md:hidden">
             <FlowCards flows={visible} now={load.generatedAt} />
           </div>
         </>
@@ -210,14 +220,14 @@ export function FlowInventory() {
       <dialog
         ref={drawer}
         onClick={(event) => event.target === drawer.current && drawer.current.close()}
-        className="border-rule bg-paper text-ink-2 backdrop:bg-scrim mt-auto mb-0 w-full max-w-none rounded-t-xl border p-0"
+        className="mt-auto mb-0 w-full max-w-none rounded-t-xl border border-rule bg-paper p-0 text-ink-2 backdrop:bg-scrim"
       >
-        <div className="border-rule flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center justify-between border-b border-rule px-4 py-3">
           <h2 className="font-medium">Filters</h2>
           <button
             type="button"
             onClick={() => drawer.current?.close()}
-            className="text-accent h-8 px-2"
+            className="h-8 px-2 text-accent"
           >
             Done
           </button>

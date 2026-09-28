@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { FlowWithHealth } from "@/lib/domain/types";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { FlowStateLabel } from "@/components/ui/Status";
@@ -6,13 +7,18 @@ import { FailuresCell, LastRunCell, OwnerCell } from "./FlowCells";
 /** Phone layout: one flow per block, same facts as the table row. */
 export function FlowCards({ flows, now }: { flows: FlowWithHealth[]; now: number }) {
   return (
-    <ul className="divide-rule border-rule divide-y border-b">
+    <ul className="divide-y divide-rule border-b border-rule">
       {flows.map((flow) => (
-        <li key={flow.id} className="grid gap-2 px-4 py-3">
+        <li key={flow.id} className="relative grid gap-2 px-4 py-3 active:bg-paper-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-ink font-medium break-words">{flow.displayName}</p>
-              <p className="text-muted text-xs">{flow.trigger.label}</p>
+              <Link
+                href={`/flows/${flow.id}`}
+                className="font-medium break-words text-ink before:absolute before:inset-0"
+              >
+                {flow.displayName}
+              </Link>
+              <p className="text-xs text-muted">{flow.trigger.label}</p>
             </div>
             <FlowStateLabel state={flow.state} />
           </div>
