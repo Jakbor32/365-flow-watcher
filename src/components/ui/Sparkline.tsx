@@ -52,7 +52,7 @@ export function Sparkline({ daily }: { daily: DailyRuns[] }) {
                 y={HEIGHT - height}
                 width={BAR}
                 height={failHeight}
-                className="fill-fail"
+                className="fill-fail-mark"
               />
             )}
           </g>

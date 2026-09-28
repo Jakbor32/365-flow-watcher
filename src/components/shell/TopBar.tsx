@@ -1,25 +1,18 @@
 import Link from "next/link";
+import { NavLinks } from "./NavLinks";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function TopBar({ mode }: { mode: "demo" | "live" | null }) {
   return (
     <>
       <header className="sticky top-0 z-20 border-b border-rule bg-paper/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-12 max-w-[1440px] items-center gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-12 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
           <Link href="/" className="flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
             <span className="font-mono text-[13px] font-medium text-accent">365</span>
-            <span className="font-medium text-ink">Flow Watcher</span>
+            <span className="hidden font-medium text-ink min-[400px]:inline">Flow Watcher</span>
           </Link>
 
-          <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
-            <Link
-              href="/"
-              aria-current="page"
-              className="rounded-md px-2.5 py-1 whitespace-nowrap text-ink aria-[current=page]:bg-paper-3"
-            >
-              Flows
-            </Link>
-          </nav>
+          <NavLinks />
 
           <div className="ml-auto flex items-center gap-3">
             {mode === "demo" && (
