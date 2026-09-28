@@ -2,8 +2,11 @@
 
 [![CI](https://github.com/Jakbor32/365-flow-watcher/actions/workflows/ci.yml/badge.svg)](https://github.com/Jakbor32/365-flow-watcher/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://365-flow-watcher.vercel.app)
 
 Watch, audit and secure Power Automate flows across your Microsoft 365 tenant: what is failing, what nobody owns any more, and who has access.
+
+**[Try the live demo](https://365-flow-watcher.vercel.app)**: fictional tenant, no sign-in, nothing is saved.
 
 ![Walkthrough: filter orphaned flows, open one, recover it, check insights](docs/images/walkthrough.gif)
 

@@ -38,5 +38,25 @@
   "license": "MIT",
   "engines": {
     "node": ">=22.12"
-  }
+  },
+  "homepage": "https://365-flow-watcher.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jakbor32/365-flow-watcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jakbor32/365-flow-watcher/issues"
+  },
+  "author": "Jakub Borowy (https://jakubborowy.com)",
+  "keywords": [
+    "power-automate",
+    "microsoft-365",
+    "power-platform",
+    "entra-id",
+    "microsoft-graph",
+    "msal",
+    "nextjs",
+    "dashboard",
+    "governance"
+  ]
 }
