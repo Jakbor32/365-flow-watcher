@@ -5,7 +5,15 @@ import { FlowStateLabel } from "@/components/ui/Status";
 import { FailuresCell, LastRunCell, OwnerCell } from "./FlowCells";
 
 /** Phone layout: one flow per block, same facts as the table row. */
-export function FlowCards({ flows, now }: { flows: FlowWithHealth[]; now: number }) {
+export function FlowCards({
+  flows,
+  now,
+  linkQuery,
+}: {
+  flows: FlowWithHealth[];
+  now: number;
+  linkQuery: string;
+}) {
   return (
     <ul className="divide-y divide-rule border-b border-rule">
       {flows.map((flow) => (
@@ -13,7 +21,7 @@ export function FlowCards({ flows, now }: { flows: FlowWithHealth[]; now: number
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <Link
-                href={`/flows/${flow.id}`}
+                href={`/flows/${flow.id}${linkQuery}`}
                 className="font-medium break-words text-ink before:absolute before:inset-0"
               >
                 {flow.displayName}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FlowWithHealth } from "@/lib/domain/types";
@@ -16,7 +17,9 @@ import {
   type SortKey,
 } from "@/lib/flows/filter";
 import { INVENTORY_QUERY_KEY } from "@/lib/flows/filter";
+import { api, type Session } from "@/lib/api/client";
 import { FlowCards } from "./FlowCards";
+import { ViewAs } from "./ViewAs";
 import { FlowFilters } from "./FlowFilters";
 import { FlowTable } from "./FlowTable";
 import { SummaryStrip } from "./SummaryStrip";
@@ -31,6 +34,8 @@ export function FlowInventory() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = useMemo(() => parseQuery(new URLSearchParams(searchParams)), [searchParams]);
+  const previewAs = searchParams.get("as");
+  const [canPreview, setCanPreview] = useState(false);
 
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -39,26 +44,33 @@ export function FlowInventory() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/flows", { signal: controller.signal })
-      .then(async (response) => {
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? `Request failed (${response.status})`);
-        setLoad({ status: "ready", flows: body.flows, generatedAt: Date.parse(body.generatedAt) });
-      })
+    // api() adds the sign-in tokens and the ?as= preview.
+    api<{ flows: FlowWithHealth[]; generatedAt: string }>("/api/flows", {
+      signal: controller.signal,
+    })
+      .then((body) =>
+        setLoad({ status: "ready", flows: body.flows, generatedAt: Date.parse(body.generatedAt) }),
+      )
       .catch((error: Error) => {
         if (error.name !== "AbortError") setLoad({ status: "error", message: error.message });
       });
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, previewAs]);
+
+  useEffect(() => {
+    api<Session>("/api/session")
+      .then((session) => setCanPreview(session.canPreview))
+      .catch(() => setCanPreview(false));
+  }, []);
 
   // Remember the view so "← Flows" on a detail page returns to it.
   useEffect(() => {
     try {
-      sessionStorage.setItem(INVENTORY_QUERY_KEY, serializeQuery(query).toString());
+      sessionStorage.setItem(INVENTORY_QUERY_KEY, withPreview(serializeQuery(query), previewAs));
     } catch {
       // Storage blocked: the back link falls back to the unfiltered list.
     }
-  }, [query]);
+  }, [previewAs, query]);
 
   // "/" jumps to search, like most admin consoles.
   useEffect(() => {
@@ -75,11 +87,17 @@ export function FlowInventory() {
 
   const update = useCallback(
     (patch: Partial<FlowQuery>) => {
-      const params = serializeQuery({ ...query, ...patch }).toString();
+      const params = withPreview(serializeQuery({ ...query, ...patch }), previewAs);
       router.replace(params ? `${pathname}?${params}` : pathname, { scroll: false });
     },
-    [pathname, query, router],
+    [pathname, previewAs, query, router],
   );
+
+  const setPreview = (email: string | null) => {
+    const params = withPreview(serializeQuery(DEFAULT_QUERY), email);
+    router.replace(params ? `${pathname}?${params}` : pathname, { scroll: false });
+  };
+  const linkQuery = previewAs ? `?as=${encodeURIComponent(previewAs)}` : "";
 
   const sortBy = (key: SortKey) =>
     update({
@@ -115,6 +133,12 @@ export function FlowInventory() {
         >
           Try again
         </button>
+        <p className="mt-6 text-sm text-muted">
+          Signed in but still failing?{" "}
+          <Link href="/diagnostics" className="text-accent hover:underline">
+            Run diagnostics
+          </Link>
+        </p>
       </div>
     );
   }
@@ -138,6 +162,7 @@ export function FlowInventory() {
             Every cloud flow in the environment, worst first.
           </p>
         </div>
+        {(canPreview || previewAs) && <ViewAs previewing={previewAs} onChange={setPreview} />}
       </div>
 
       {load.status === "ready" ? (
@@ -209,10 +234,16 @@ export function FlowInventory() {
       ) : (
         <>
           <div className="hidden border-t border-rule md:block">
-            <FlowTable flows={visible} query={query} now={load.generatedAt} onSort={sortBy} />
+            <FlowTable
+              flows={visible}
+              query={query}
+              now={load.generatedAt}
+              onSort={sortBy}
+              linkQuery={linkQuery}
+            />
           </div>
           <div className="border-t border-rule md:hidden">
-            <FlowCards flows={visible} now={load.generatedAt} />
+            <FlowCards flows={visible} now={load.generatedAt} linkQuery={linkQuery} />
           </div>
         </>
       )}
@@ -236,4 +267,10 @@ export function FlowInventory() {
       </dialog>
     </div>
   );
+}
+
+/** Filter params plus the preview account, which is not a filter. */
+function withPreview(params: URLSearchParams, previewAs: string | null): string {
+  if (previewAs) params.set("as", previewAs);
+  return params.toString();
 }

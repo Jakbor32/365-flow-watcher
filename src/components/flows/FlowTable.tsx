@@ -10,9 +10,11 @@ interface Props {
   query: FlowQuery;
   now: number;
   onSort: (key: SortKey) => void;
+  /** "?as=…" while previewing another account, else "". */
+  linkQuery: string;
 }
 
-export function FlowTable({ flows, query, now, onSort }: Props) {
+export function FlowTable({ flows, query, now, onSort, linkQuery }: Props) {
   const header = (key: SortKey | null, label: string, className = "") => {
     const active = key !== null && query.sort === key;
     return (
@@ -61,7 +63,7 @@ export function FlowTable({ flows, query, now, onSort }: Props) {
             <td className="py-2.5 pr-3 pl-4 align-top sm:pl-6">
               {/* The link covers the whole row; other cells hold no controls. */}
               <Link
-                href={`/flows/${flow.id}`}
+                href={`/flows/${flow.id}${linkQuery}`}
                 title={flow.displayName}
                 className="block truncate font-medium text-ink before:absolute before:inset-0 hover:underline"
               >
