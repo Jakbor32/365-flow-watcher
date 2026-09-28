@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserMenu } from "./UserMenu";
 
 export function TopBar({ mode }: { mode: "demo" | "live" | null }) {
   return (
@@ -15,13 +16,7 @@ export function TopBar({ mode }: { mode: "demo" | "live" | null }) {
           <NavLinks />
 
           <div className="ml-auto flex items-center gap-3">
-            {mode === "demo" && (
-              <span className="hidden items-center gap-2 font-mono text-xs text-muted md:flex">
-                <span className="whitespace-nowrap">contoso.com</span>
-                <span className="text-rule-2">/</span>
-                <span className="whitespace-nowrap">demo.admin</span>
-              </span>
-            )}
+            <UserMenu />
             <ThemeToggle />
           </div>
         </div>

@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
-import { connection } from "next/server";
+import { headers } from "next/headers";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { TopBar } from "@/components/shell/TopBar";
-import { ConfigError, getConfig } from "@/lib/config";
+import { ConfigError, getConfig, toPublicConfig, type PublicConfig } from "@/lib/config";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -33,11 +34,12 @@ export const viewport: Viewport = {
 const themeScript = `try{var t=localStorage.getItem("theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){}`;
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  await connection();
+  // Reading headers makes the page dynamic, so config is read per request.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
-  let mode: "demo" | "live" | null = null;
+  let publicConfig: PublicConfig | null = null;
   try {
-    mode = getConfig().mode;
+    publicConfig = toPublicConfig(getConfig());
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error;
   }
@@ -50,11 +52,18 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${plexSans.variable} ${plexMono.variable} antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-dvh">
-        <TopBar mode={mode} />
-        {children}
+        {publicConfig ? (
+          <AuthProvider config={publicConfig}>
+            <TopBar mode={publicConfig.mode} />
+            {children}
+          </AuthProvider>
+        ) : (
+          // Misconfigured: the page itself lists what is wrong.
+          children
+        )}
       </body>
     </html>
   );
