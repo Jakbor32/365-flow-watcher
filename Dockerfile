@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # 365 Flow Watcher. One image for every tenant: all configuration is read
-# from environment variables at runtime (see docs/CONFIGURATION.md).
+# from environment variables at runtime (see docs/configuration.md).
 
 ARG NODE_VERSION=22-alpine
 

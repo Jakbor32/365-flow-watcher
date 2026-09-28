@@ -2,7 +2,7 @@ import "server-only";
 
 // All configuration is read at runtime from process.env, never inlined at
 // build time, so one Docker image works for any tenant. Every variable is
-// documented in docs/CONFIGURATION.md.
+// documented in docs/configuration.md.
 
 export interface LiveConfig {
   mode: "live";

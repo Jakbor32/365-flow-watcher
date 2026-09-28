@@ -19,7 +19,7 @@ export default async function FlowsPage() {
           ))}
         </ul>
         <p className="mt-6">
-          Every variable is explained in <code className="font-mono">docs/CONFIGURATION.md</code>.
+          Every variable is explained in <code className="font-mono">docs/configuration.md</code>.
         </p>
       </main>
     );
