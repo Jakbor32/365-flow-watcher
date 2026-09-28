@@ -46,4 +46,7 @@ export const buttonClass = {
   secondary:
     "h-8 rounded-md border border-rule-2 px-3 whitespace-nowrap text-ink-2 hover:bg-paper-3 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50",
   quiet: "h-8 px-2 whitespace-nowrap text-muted hover:text-ink disabled:opacity-50",
+  /** Small outlined button for destructive row actions. */
+  smallDanger:
+    "h-7 rounded-md border border-rule-2 px-2.5 text-xs whitespace-nowrap text-ink-2 hover:border-fail hover:bg-fail-wash hover:text-fail active:opacity-80 disabled:opacity-50",
 };

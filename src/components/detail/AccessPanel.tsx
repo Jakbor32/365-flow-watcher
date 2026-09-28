@@ -88,7 +88,7 @@ export function AccessPanel({ flow, permissions, session, onGrant, onRevoke }: P
                     type="button"
                     onClick={() => setRevoking(permission)}
                     aria-label={`Remove ${permission.principal.displayName}`}
-                    className={buttonClass.quiet}
+                    className={buttonClass.smallDanger}
                   >
                     Remove
                   </button>

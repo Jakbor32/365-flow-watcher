@@ -110,10 +110,13 @@ export function FlowDetail({ flowId }: { flowId: string }) {
   return (
     <div className="mx-auto max-w-[1440px]">
       <div className="px-4 pt-5 pb-4 sm:px-6">
-        <Link href={backHref} className="font-mono text-xs text-muted hover:text-ink">
-          ← Flows
+        <Link
+          href={backHref}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-rule-2 px-3 text-sm whitespace-nowrap text-ink-2 hover:bg-paper-3 hover:text-ink"
+        >
+          <span aria-hidden>←</span> Back to flows
         </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-xl font-medium">{flow.displayName}</h1>
             <p className="mt-1 text-xs text-muted">
