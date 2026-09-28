@@ -1,0 +1,20 @@
+# Quick start:
+#   cp .env.example .env    # set DEMO_MODE=true to try it without Azure
+#   docker compose up -d
+#   open http://localhost:3000
+services:
+  app:
+    build: .
+    image: 365-flow-watcher
+    env_file: .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
