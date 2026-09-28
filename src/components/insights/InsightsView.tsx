@@ -75,8 +75,12 @@ export function InsightsView() {
                     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                       <p className="font-mono text-xs">
                         <span className="text-fail">{error.code}</span>
-                        <span className="text-muted"> at </span>
-                        <span className="text-ink-2">{error.action}</span>
+                        {error.action && (
+                          <>
+                            <span className="text-muted"> at </span>
+                            <span className="text-ink-2">{error.action}</span>
+                          </>
+                        )}
                       </p>
                       <p className="tabular font-mono text-xs text-muted">
                         <span className="text-ink">{error.count}</span> runs ·{" "}

@@ -63,8 +63,13 @@ export function RunHistory({ flowId, now }: { flowId: string; now: number }) {
       {topError && (
         <p className="border-t border-rule bg-fail-wash px-4 py-2 text-xs sm:px-6">
           <span className="font-mono text-fail">{topError.code}</span>
-          <span className="text-muted"> · {topError.count}× in these runs · failing at </span>
-          <span className="font-mono text-ink-2">{topError.action}</span>
+          <span className="text-muted"> · {topError.count}× in these runs</span>
+          {topError.action && (
+            <>
+              <span className="text-muted"> · failing at </span>
+              <span className="font-mono text-ink-2">{topError.action}</span>
+            </>
+          )}
         </p>
       )}
 
@@ -136,13 +141,13 @@ function formatDuration(ms: number): string {
 }
 
 function mostCommonError(runs: Run[]) {
-  const counts = new Map<string, { code: string; action: string; count: number }>();
+  const counts = new Map<string, { code: string; action: string | null; count: number }>();
   for (const run of runs) {
     if (!run.error) continue;
     const key = `${run.error.code}|${run.error.action}`;
     const entry = counts.get(key) ?? {
       code: run.error.code,
-      action: run.error.action ?? "unknown action",
+      action: run.error.action,
       count: 0,
     };
     entry.count++;

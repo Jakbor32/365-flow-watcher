@@ -9,7 +9,8 @@ export interface Insights {
   topFailing: { id: string; name: string; failures: number; runs: number }[];
   commonErrors: {
     code: string;
-    action: string;
+    /** Null when the source can't tell (live run lists omit it). */
+    action: string | null;
     count: number;
     flows: number;
     example: string;
@@ -72,7 +73,7 @@ function groupErrors(runsByFlow: Map<string, Run[]>, since: number) {
   for (const [flowId, runs] of runsByFlow) {
     for (const run of runs) {
       if (!run.error || Date.parse(run.startTime) < since) continue;
-      const action = run.error.action ?? "unknown action";
+      const action = run.error.action;
       const key = `${run.error.code}|${action}`;
       const group = groups.get(key) ?? {
         code: run.error.code,
