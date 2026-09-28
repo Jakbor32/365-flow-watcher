@@ -6,6 +6,18 @@ docker compose up -d
 curl http://localhost:3000/api/health   # {"status":"ok","mode":"live"}
 ```
 
+Without compose, the same hardening by hand:
+
+```bash
+docker build -t 365-flow-watcher .
+docker run -d --name flow-watcher -p 127.0.0.1:3000:3000 --env-file .env \
+  --read-only --tmpfs /tmp --tmpfs /app/.next/cache \
+  --cap-drop ALL --security-opt no-new-privileges:true \
+  365-flow-watcher
+```
+
+On a remote server, keep it on `127.0.0.1` and tunnel in: `ssh -L 3000:127.0.0.1:3000 you@server`, then open `http://localhost:3000`.
+
 All variables: [configuration.md](../configuration.md).
 
 ## Local or public?

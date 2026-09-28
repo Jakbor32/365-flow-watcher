@@ -79,11 +79,50 @@ or `npm install && DEMO_MODE=true npm run dev`, then open http://localhost:3000.
 
 ## Connect your tenant
 
-1. [Register an app in Entra ID](docs/setup/1-entra-app.md)
-2. [Find your Power Platform environment](docs/setup/2-environment.md)
+You need three IDs. Where each one comes from:
+
+1. [Register an app in Entra ID](docs/setup/1-entra-app.md): tenant ID, client ID (no secret)
+2. [Find your Power Platform environment](docs/setup/2-environment.md): environment ID
 3. [Run it with Docker](docs/setup/3-run.md)
 
-All settings: [configuration.md](docs/configuration.md). Something off after signing in? Open **Diagnostics**.
+Then create a `.env` like this one (example values, use your own):
+
+```ini
+DEMO_MODE=false
+
+# Entra admin center > App registrations > your app > Overview
+AZURE_TENANT_ID=8f3c2a51-6d0e-4b7a-9c21-5e4f8a7b3d10
+AZURE_CLIENT_ID=2a91e7c4-3b5f-4d28-a6e0-9f1c7b24d5e8
+
+# make.powerautomate.com/environments/<this>/flows
+POWER_PLATFORM_ENVIRONMENT_ID=Default-8f3c2a51-6d0e-4b7a-9c21-5e4f8a7b3d10
+
+# Must match the SPA redirect URI in the app registration
+APP_URL=http://localhost:3000
+
+# Optional: only flows owned by these accounts (faster on big environments)
+WATCHED_FLOW_ACCOUNTS=svc-automation@contoso.com,it-admin@contoso.com
+
+# Optional: who may grant/remove co-owners, and whether that is on at all
+ACCESS_MANAGERS=it-admin@contoso.com
+ENABLE_GRANT_ACCESS=false
+```
+
+and start it, reachable from this machine only:
+
+```bash
+docker build -t 365-flow-watcher .
+docker run -d --name flow-watcher -p 127.0.0.1:3000:3000 --env-file .env \
+  --read-only --tmpfs /tmp --tmpfs /app/.next/cache \
+  --cap-drop ALL --security-opt no-new-privileges:true \
+  365-flow-watcher
+```
+
+Open http://localhost:3000, sign in, then check **Diagnostics**: everything required should be green.
+
+> Running it on a server? Keep it on `127.0.0.1` and tunnel in with `ssh -L 3000:127.0.0.1:3000 you@server`. Your browser still opens `http://localhost:3000`, so the redirect URI stays the same.
+
+The first load reads every flow's recent runs: about 25 seconds for 200 flows. After that, filters and navigation are instant until you press **Refresh**. All settings: [configuration.md](docs/configuration.md).
 
 ## Security
 
