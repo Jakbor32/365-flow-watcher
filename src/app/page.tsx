@@ -1,38 +1,35 @@
 import { connection } from "next/server";
+import { Suspense } from "react";
+import { FlowInventory } from "@/components/flows/FlowInventory";
 import { ConfigError, getConfig } from "@/lib/config";
-import { DemoDataSource, demoNow } from "@/lib/data/demo-source";
 
-// Placeholder until module 2 builds the real dashboard.
-export default async function Home() {
+export default async function FlowsPage() {
   await connection();
 
-  let mode: string;
   try {
-    mode = getConfig().mode;
+    getConfig();
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error;
     return (
-      <main className="mx-auto max-w-2xl p-6 font-mono text-sm">
-        <h1 className="mb-4 text-lg font-semibold">365 Flow Watcher is not configured</h1>
-        <ul className="list-disc space-y-1 pl-5">
+      <main className="mx-auto max-w-2xl px-4 py-12">
+        <h1 className="text-lg font-medium">365 Flow Watcher is not configured</h1>
+        <ul className="mt-4 list-disc space-y-1 pl-5 font-mono text-xs">
           {error.problems.map((problem) => (
             <li key={problem}>{problem}</li>
           ))}
         </ul>
-        <p className="mt-4">See docs/CONFIGURATION.md.</p>
+        <p className="mt-6">
+          Every variable is explained in <code className="font-mono">docs/CONFIGURATION.md</code>.
+        </p>
       </main>
     );
   }
 
-  const flows = mode === "demo" ? await new DemoDataSource(demoNow()).listFlows() : [];
-
   return (
-    <main className="mx-auto max-w-2xl p-6 font-mono text-sm">
-      <h1 className="text-lg font-semibold">365 Flow Watcher</h1>
-      <p>
-        mode: {mode}, flows: {flows.length}, orphaned:{" "}
-        {flows.filter((flow) => flow.orphaned).length}
-      </p>
+    <main>
+      <Suspense>
+        <FlowInventory />
+      </Suspense>
     </main>
   );
 }

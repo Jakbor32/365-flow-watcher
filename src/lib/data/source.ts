@@ -1,12 +1,6 @@
-import type { Flow, Permission, Person, Run } from "@/lib/domain/types";
+import type { FlowWithHealth, Permission, Person, Run } from "@/lib/domain/types";
 
-export interface FlowWithHealth extends Flow {
-  lastRun: Run | null;
-  /** Runs in the lookback window that the source returned. */
-  recentRuns: number;
-  recentFailures: number;
-  orphaned: boolean;
-}
+export type { FlowWithHealth };
 
 export interface GrantResult {
   permission: Permission;

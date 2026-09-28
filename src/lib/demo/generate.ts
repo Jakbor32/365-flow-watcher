@@ -79,11 +79,7 @@ export function generateDemoTenant({
         : activeHumans;
     const owner = random.pick(ownerPool);
 
-    const department = owner.department ?? random.pick(DEPARTMENTS);
-    const displayName = uniqueName(
-      `${department} - ${template.name}${random.pick(SUFFIXES)}`,
-      usedNames,
-    );
+    const displayName = uniqueName(random, template, owner.department, usedNames);
 
     const createdAt = nowMs - random.int(40, 900) * DAY - random.int(0, 23) * HOUR;
     const state = pickState(random);
@@ -191,8 +187,11 @@ function pickHealth(random: Random, flow: Flow, nowMs: number): Health {
   }
 
   const roll = random.next();
-  if (roll < 0.72) return { kind: "healthy", failRate: random.next() * 0.03 };
-  if (roll < 0.92) return { kind: "flaky", failRate: 0.08 + random.next() * 0.2 };
+  // Most real flows never fail in a given week; a minority are noisy.
+  if (roll < 0.74) {
+    return { kind: "healthy", failRate: random.chance(0.7) ? 0 : random.next() * 0.01 };
+  }
+  if (roll < 0.93) return { kind: "flaky", failRate: 0.03 + random.next() * 0.12 };
 
   return {
     kind: "broken",
@@ -307,14 +306,25 @@ function toRunError(template: ErrorTemplate): RunError {
   return { code: template.code, message: template.message, action: template.action };
 }
 
-function uniqueName(name: string, used: Set<string>): string {
-  let candidate = name;
-  let counter = 2;
-  while (used.has(candidate)) {
-    candidate = `${name} ${counter++}`;
+function uniqueName(
+  random: Random,
+  template: FlowTemplate,
+  ownerDepartment: string | null,
+  used: Set<string>,
+): string {
+  // Owner's department first, then other departments/suffixes, then a number.
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const department =
+      attempt === 0 && ownerDepartment ? ownerDepartment : random.pick(DEPARTMENTS);
+    const candidate = `${department} - ${template.name}${random.pick(SUFFIXES)}`;
+    if (!used.has(candidate)) {
+      used.add(candidate);
+      return candidate;
+    }
   }
-  used.add(candidate);
-  return candidate;
+  const fallback = `${template.name} #${used.size + 1}`;
+  used.add(fallback);
+  return fallback;
 }
 
 function iso(ms: number): string {

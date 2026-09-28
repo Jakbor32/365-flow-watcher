@@ -1,26 +1,126 @@
+/* Hallmark · genre: modern-minimal (app) · theme: custom "ops console"
+ * vibe: "graphite instrument panel, one cyan signal"
+ * paper oklch(16.5% 0.012 255) dark / oklch(98.5% 0.003 255) light · accent oklch(78% 0.12 215) cyan
+ * fonts: IBM Plex Sans (UI) + IBM Plex Mono (ids, times, numbers)
+ * axes: dark / grotesk-sans + mono / cool
+ */
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: oklch(16.5% 0.012 255);
+  --color-paper-2: oklch(19.5% 0.013 255);
+  --color-paper-3: oklch(23% 0.015 255);
+  --color-rule: oklch(28% 0.014 255);
+  --color-rule-2: oklch(36% 0.016 255);
+  --color-ink: oklch(94% 0.006 255);
+  --color-ink-2: oklch(80% 0.01 255);
+  --color-muted: oklch(66% 0.014 255);
+  --color-accent: oklch(78% 0.12 215);
+  --color-accent-ink: oklch(18% 0.03 230);
+  --color-ok: oklch(74% 0.14 155);
+  --color-fail: oklch(70% 0.18 25);
+  --color-warn: oklch(82% 0.14 80);
+  --color-idle: oklch(56% 0.012 255);
+  --color-fail-wash: oklch(70% 0.18 25 / 0.12);
+  --color-warn-wash: oklch(82% 0.14 80 / 0.12);
+  --color-accent-wash: oklch(78% 0.12 215 / 0.12);
+  --color-scrim: oklch(8% 0.01 255 / 0.6);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-paper: oklch(98.5% 0.003 255);
+  --color-paper-2: oklch(96.5% 0.005 255);
+  --color-paper-3: oklch(93.5% 0.007 255);
+  --color-rule: oklch(89% 0.007 255);
+  --color-rule-2: oklch(80% 0.01 255);
+  --color-ink: oklch(22% 0.015 255);
+  --color-ink-2: oklch(34% 0.015 255);
+  --color-muted: oklch(48% 0.014 255);
+  --color-accent: oklch(50% 0.13 230);
+  --color-accent-ink: oklch(98% 0.005 230);
+  --color-ok: oklch(50% 0.13 155);
+  --color-fail: oklch(53% 0.2 25);
+  --color-warn: oklch(58% 0.13 70);
+  --color-idle: oklch(62% 0.01 255);
+  --color-fail-wash: oklch(53% 0.2 25 / 0.08);
+  --color-warn-wash: oklch(58% 0.13 70 / 0.1);
+  --color-accent-wash: oklch(50% 0.13 230 / 0.08);
+  --color-scrim: oklch(20% 0.01 255 / 0.35);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--color-paper);
+  --color-paper-2: var(--color-paper-2);
+  --color-paper-3: var(--color-paper-3);
+  --color-rule: var(--color-rule);
+  --color-rule-2: var(--color-rule-2);
+  --color-ink: var(--color-ink);
+  --color-ink-2: var(--color-ink-2);
+  --color-muted: var(--color-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-ink: var(--color-accent-ink);
+  --color-ok: var(--color-ok);
+  --color-fail: var(--color-fail);
+  --color-warn: var(--color-warn);
+  --color-idle: var(--color-idle);
+  --color-fail-wash: var(--color-fail-wash);
+  --color-warn-wash: var(--color-warn-wash);
+  --color-accent-wash: var(--color-accent-wash);
+  --color-scrim: var(--color-scrim);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink-2);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--color-ink);
+  font-style: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Numbers line up in columns everywhere. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Instant, visible focus. Never animated. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent-wash);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

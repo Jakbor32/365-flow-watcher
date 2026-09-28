@@ -59,3 +59,21 @@ export interface Permission {
   role: PermissionRole;
   principal: Person;
 }
+
+export interface DailyRuns {
+  /** UTC day, YYYY-MM-DD. */
+  day: string;
+  succeeded: number;
+  failed: number;
+}
+
+/** A flow plus the run and ownership signals the inventory needs. */
+export interface FlowWithHealth extends Flow {
+  lastRun: Run | null;
+  /** Runs started in the last HEALTH_WINDOW_DAYS days. */
+  recentRuns: number;
+  recentFailures: number;
+  /** Oldest first, one entry per day, SPARKLINE_DAYS long. */
+  daily: DailyRuns[];
+  orphaned: boolean;
+}
