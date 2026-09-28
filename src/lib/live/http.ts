@@ -44,8 +44,12 @@ export async function requestJson(
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch (error) {
+    // Keep the low-level cause (ECONNRESET, ENOTFOUND, ...) so failures are diagnosable.
+    const cause = (error as { cause?: { code?: string } })?.cause?.code;
     const reason =
-      error instanceof Error && error.name === "TimeoutError" ? "timed out" : "is unreachable";
+      error instanceof Error && error.name === "TimeoutError"
+        ? "timed out"
+        : `is unreachable${cause ? ` (${cause})` : ""}`;
     throw new UpstreamError(`${options.service} ${reason}`, 504, options.service);
   }
 

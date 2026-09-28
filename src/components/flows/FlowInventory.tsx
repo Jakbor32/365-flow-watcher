@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FlowWithHealth } from "@/lib/domain/types";
 import { csvFileName, toCsv } from "@/lib/flows/csv";
@@ -18,7 +18,9 @@ import {
 } from "@/lib/flows/filter";
 import { INVENTORY_QUERY_KEY } from "@/lib/flows/filter";
 import { api, type Session } from "@/lib/api/client";
+import { cacheKey, cachedFlows, forgetFlows, storeFlows } from "@/lib/flows/cache";
 import { FlowCards } from "./FlowCards";
+import { LoadingFlows } from "./LoadingFlows";
 import { ViewAs } from "./ViewAs";
 import { FlowFilters } from "./FlowFilters";
 import { FlowTable } from "./FlowTable";
@@ -30,32 +32,42 @@ type Load =
   | { status: "ready"; flows: FlowWithHealth[]; generatedAt: number };
 
 export function FlowInventory() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = useMemo(() => parseQuery(new URLSearchParams(searchParams)), [searchParams]);
   const previewAs = searchParams.get("as");
   const [canPreview, setCanPreview] = useState(false);
 
-  const [load, setLoad] = useState<Load>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
+  const key = cacheKey(previewAs);
+  // Bumped whenever the flow cache changes, so this component re-reads it.
+  const [version, setVersion] = useState(0);
+  const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
+  const cached = cachedFlows(key);
+  const load: Load =
+    failure?.key === key
+      ? { status: "error", message: failure.message }
+      : cached
+        ? { status: "ready", ...cached }
+        : { status: "loading" };
   const drawer = useRef<HTMLDialogElement>(null);
   const searchBox = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (cachedFlows(key)) return;
     const controller = new AbortController();
     // api() adds the sign-in tokens and the ?as= preview.
     api<{ flows: FlowWithHealth[]; generatedAt: string }>("/api/flows", {
       signal: controller.signal,
     })
-      .then((body) =>
-        setLoad({ status: "ready", flows: body.flows, generatedAt: Date.parse(body.generatedAt) }),
-      )
+      .then((body) => {
+        storeFlows(key, { flows: body.flows, generatedAt: Date.parse(body.generatedAt) });
+        setVersion((value) => value + 1);
+      })
       .catch((error: Error) => {
-        if (error.name !== "AbortError") setLoad({ status: "error", message: error.message });
+        if (error.name !== "AbortError") setFailure({ key, message: error.message });
       });
     return () => controller.abort();
-  }, [attempt, previewAs]);
+  }, [key, version]);
 
   useEffect(() => {
     api<Session>("/api/session")
@@ -88,14 +100,21 @@ export function FlowInventory() {
   const update = useCallback(
     (patch: Partial<FlowQuery>) => {
       const params = withPreview(serializeQuery({ ...query, ...patch }), previewAs);
-      router.replace(params ? `${pathname}?${params}` : pathname, { scroll: false });
+      // Native history: no server round trip, no refetch (Next syncs useSearchParams).
+      window.history.replaceState(null, "", params ? `${pathname}?${params}` : pathname);
     },
-    [pathname, previewAs, query, router],
+    [pathname, previewAs, query],
   );
 
   const setPreview = (email: string | null) => {
     const params = withPreview(serializeQuery(DEFAULT_QUERY), email);
-    router.replace(params ? `${pathname}?${params}` : pathname, { scroll: false });
+    window.history.replaceState(null, "", params ? `${pathname}?${params}` : pathname);
+  };
+
+  const refresh = () => {
+    forgetFlows();
+    setFailure(null);
+    setVersion((value) => value + 1);
   };
   const linkQuery = previewAs ? `?as=${encodeURIComponent(previewAs)}` : "";
 
@@ -105,7 +124,8 @@ export function FlowInventory() {
       descending: query.sort === key ? !query.descending : key !== "name" && key !== "owner",
     });
 
-  const flows = useMemo(() => (load.status === "ready" ? load.flows : []), [load]);
+  // The cached entry is a stable object, so these memos only rerun on a new load.
+  const flows = useMemo(() => cached?.flows ?? [], [cached]);
   const visible = useMemo(() => filterFlows(flows, query), [flows, query]);
   const summary = useMemo(() => summarize(flows), [flows]);
   const { owners, connectors } = useMemo(() => facets(flows), [flows]);
@@ -125,10 +145,7 @@ export function FlowInventory() {
         <p className="mt-2 font-mono text-xs text-fail">{load.message}</p>
         <button
           type="button"
-          onClick={() => {
-            setLoad({ status: "loading" });
-            setAttempt((value) => value + 1);
-          }}
+          onClick={refresh}
           className="mt-6 h-8 rounded-md border border-rule-2 px-3 text-ink hover:bg-paper-3"
         >
           Try again
@@ -217,11 +234,20 @@ export function FlowInventory() {
           >
             Export CSV
           </button>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={load.status === "loading"}
+            title="Load the flows again from Microsoft"
+            className="h-8 rounded-md border border-rule px-3 whitespace-nowrap text-ink-2 hover:border-rule-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Refresh
+          </button>
         </div>
       </div>
 
       {load.status === "loading" ? (
-        <p className="px-4 py-12 font-mono text-xs text-muted sm:px-6">Loading flows…</p>
+        <LoadingFlows />
       ) : visible.length === 0 ? (
         <div className="border-t border-rule px-4 py-12 sm:px-6">
           <p className="text-ink">No flows match these filters.</p>

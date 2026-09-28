@@ -36,7 +36,13 @@ export interface LiveContext {
   creatorIds: Set<string> | null;
 }
 
-const cache = new Map<string, { expires: number; flows: Promise<FlowWithHealth[]> }>();
+interface Loaded {
+  flows: FlowWithHealth[];
+  /** Newest first, up to HEALTH_RUNS per flow; reused by run history and insights. */
+  runs: Map<string, Run[]>;
+}
+
+const cache = new Map<string, { expires: number; data: Promise<Loaded> }>();
 
 export class LiveDataSource implements DataSource {
   constructor(private readonly ctx: LiveContext) {}
@@ -58,18 +64,23 @@ export class LiveDataSource implements DataSource {
   }
 
   async listFlows(): Promise<FlowWithHealth[]> {
-    const key = this.cacheKey();
-    const hit = cache.get(key);
-    if (hit && hit.expires > Date.now()) return hit.flows;
-    const flows = this.loadFlows();
-    for (const [staleKey, entry] of cache) if (entry.expires <= Date.now()) cache.delete(staleKey);
-    cache.set(key, { expires: Date.now() + CACHE_MS, flows });
-    flows.catch(() => cache.delete(key));
-    return flows;
+    return (await this.loaded()).flows;
   }
 
-  private async loadFlows(): Promise<FlowWithHealth[]> {
+  private loaded(): Promise<Loaded> {
+    const key = this.cacheKey();
+    const hit = cache.get(key);
+    if (hit && hit.expires > Date.now()) return hit.data;
+    const data = this.loadFlows();
+    for (const [staleKey, entry] of cache) if (entry.expires <= Date.now()) cache.delete(staleKey);
+    cache.set(key, { expires: Date.now() + CACHE_MS, data });
+    data.catch(() => cache.delete(key));
+    return data;
+  }
+
+  private async loadFlows(): Promise<Loaded> {
     const { flowToken, graphToken, config, creatorIds } = this.ctx;
+    const started = Date.now();
     const index = await requestPaged(
       this.url("/v2/flows", { $top: "250", includeSoftDeletedFlows: "false" }),
       flowToken,
@@ -77,11 +88,23 @@ export class LiveDataSource implements DataSource {
       30,
     );
 
-    // The index usually has what we need; fetch details only when it doesn't.
-    const raws = await mapConcurrent(index, CONCURRENCY, async (item) => {
+    const inScope = (creator: string | null) =>
+      creatorIds === null || (creator !== null && creatorIds.has(creator));
+
+    // Scope first, using the creator from the index, so a big environment
+    // never turns into one detail call per flow. Only flows without a creator
+    // in the index need their details to be scoped at all.
+    const candidates = index.filter((item) => {
+      const creator = creatorIdOf(item);
+      return creator === null || inScope(creator);
+    });
+
+    let detailCalls = 0;
+    const raws = await mapConcurrent(candidates, CONCURRENCY, async (item) => {
       const properties = asRecord(asRecord(item)?.properties);
       const id = flowIdOf(item);
       if (!id || (creatorIdOf(item) && properties?.connectionReferences)) return item;
+      detailCalls++;
       return requestJson(this.url(`/flows/${id}`, { includeFlowDefinition: "false" }), flowToken, {
         service: "Flow Service",
       });
@@ -89,9 +112,10 @@ export class LiveDataSource implements DataSource {
 
     const scoped = raws.filter((raw) => {
       const creator = creatorIdOf(raw);
-      return creator !== null && (creatorIds === null || creatorIds.has(creator));
+      return creator !== null && inScope(creator);
     });
 
+    const runsByFlow = new Map<string, Run[]>();
     const { people } = await getPeople(
       graphToken,
       scoped.map((raw) => creatorIdOf(raw)!),
@@ -106,9 +130,22 @@ export class LiveDataSource implements DataSource {
         people.get(creator) ?? deletedPerson(creator),
       )!;
       const runs = await this.fetchRuns(flow.id, HEALTH_RUNS);
+      runsByFlow.set(flow.id, runs);
       // Only an inactive owner can make a flow orphaned; skip the call otherwise.
       const permissions = flow.owner.status === "active" ? [] : await this.listPermissions(flow.id);
       return withHealth(flow, runs, permissions, now);
+    }).then((flows) => {
+      // Sizes and timing only: no names, IDs or tokens.
+      console.info(
+        JSON.stringify({
+          type: "inventory",
+          indexed: index.length,
+          inScope: flows.length,
+          detailCalls,
+          ms: Date.now() - started,
+        }),
+      );
+      return { flows, runs: runsByFlow };
     });
   }
 
@@ -117,7 +154,13 @@ export class LiveDataSource implements DataSource {
   }
 
   async listRuns(flowId: string, limit: number): Promise<Run[]> {
-    await this.requireFlow(flowId);
+    const { flows, runs } = await this.loaded();
+    if (!flows.some((flow) => flow.id === flowId))
+      throw new NotFoundError(`Flow ${flowId} not found`);
+    // The inventory load already read the latest runs; only go back for more.
+    const known = runs.get(flowId);
+    if (known && (limit <= known.length || known.length < HEALTH_RUNS))
+      return known.slice(0, limit);
     return this.fetchRuns(flowId, limit);
   }
 
