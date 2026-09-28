@@ -1,14 +1,17 @@
 import { connection } from "next/server";
 import { accessCapability } from "@/lib/access/rules";
-import { getConfig } from "@/lib/config";
+import { getContext } from "@/lib/server/context";
 import { respond } from "@/lib/server/respond";
-import { getActor } from "@/lib/server/session";
 
-export async function GET() {
+export async function GET(request: Request) {
   await connection();
   return respond(async () => {
-    const config = getConfig();
-    const actor = getActor();
-    return { mode: config.mode, user: actor, access: accessCapability(config, actor.email) };
+    const { config, actor, canPreview } = await getContext(request);
+    return {
+      mode: config.mode,
+      user: { name: actor.name, email: actor.email },
+      access: accessCapability(config, actor.email),
+      canPreview,
+    };
   });
 }

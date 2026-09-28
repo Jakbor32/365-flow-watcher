@@ -1,17 +1,17 @@
 import { connection } from "next/server";
 import { accessCapability, assertGrantable, parseEmail, parseGuid } from "@/lib/access/rules";
-import { getConfig } from "@/lib/config";
-import { BadRequestError, ForbiddenError } from "@/lib/data/source";
+import { BadRequestError, ForbiddenError, NotFoundError } from "@/lib/data/source";
 import { audit } from "@/lib/server/audit";
-import { getDataSource } from "@/lib/server/data-source";
+import { getContext } from "@/lib/server/context";
 import { respond } from "@/lib/server/respond";
-import { getActor } from "@/lib/server/session";
 
-export async function GET(_request: Request, ctx: RouteContext<"/api/flows/[id]/permissions">) {
+export async function GET(request: Request, ctx: RouteContext<"/api/flows/[id]/permissions">) {
   await connection();
   return respond(async () => {
     const flowId = parseGuid((await ctx.params).id, "Flow ID");
-    return { permissions: await getDataSource().listPermissions(flowId) };
+    const { source } = await getContext(request);
+    if (!(await source.getFlow(flowId))) throw new NotFoundError("Flow not found");
+    return { permissions: await source.listPermissions(flowId) };
   });
 }
 
@@ -19,8 +19,8 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/flows/[id]/
 export async function POST(request: Request, ctx: RouteContext<"/api/flows/[id]/permissions">) {
   await connection();
   return respond(async () => {
-    const actor = getActor();
-    const capability = accessCapability(getConfig(), actor.email);
+    const { config, actor, source } = await getContext(request);
+    const capability = accessCapability(config, actor.email);
     if (!capability.canManage) throw new ForbiddenError(capability.reason ?? "Not allowed");
 
     const flowId = parseGuid((await ctx.params).id, "Flow ID");
@@ -29,7 +29,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/flows/[id]/
     });
     const email = parseEmail(body?.email);
 
-    const source = getDataSource();
+    if (!(await source.getFlow(flowId))) throw new NotFoundError("Flow not found");
     const [permissions, person] = await Promise.all([
       source.listPermissions(flowId),
       source.findPerson(email),
