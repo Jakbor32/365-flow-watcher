@@ -31,7 +31,7 @@
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^7",
     "vitest": "^4.1.11"
   },
   "description": "Watch, audit and secure Power Automate flows across your Microsoft 365 tenant.",
